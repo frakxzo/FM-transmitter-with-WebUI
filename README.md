@@ -70,5 +70,3 @@ Once running, access the tactical UI on your local network via:
 
 * **FM Transmission Core:** The underlying RF modulation driver used in this project is **[PiFmRds](https://github.com/ChristopheJacquet/PiFmRds)**, developed by **Christophe Jacquet**. It handles the bare-metal DMA clock manipulation required to generate the FM carrier wave.
 
-
-```
