@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MTU Tactical Transceiver</title>
+    <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Inter:wght@500;700&display=swap" rel="stylesheet">
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body, html { height: 100vh; width: 100vw; overflow: hidden; background-color: #08080a; display: flex; align-items: center; justify-content: center; font-family: 'Inter', sans-serif; position: relative; }
+        
+        #sondavenCanvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; }
+        .grain-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; pointer-events: none; opacity: 0.04; background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E"); }
+        
+        /* --- HUD SYSTEM --- */
+        .hud { position: absolute; z-index: 2; font-family: 'Share Tech Mono', monospace; color: rgba(102, 255, 0, 0.4); font-size: 0.85rem; }
+        .top-left { top: 35px; left: 40px; pointer-events: none; } 
+        .top-right { top: 35px; right: 40px; text-align: right; pointer-events: none; }
+        .bottom-left { bottom: 40px; left: 40px; pointer-events: none; }
+        .bottom-right { bottom: 40px; right: 40px; text-align: right; display: flex; flex-direction: column; align-items: flex-end;}
+        
+        .hud-title { border-bottom: 1px solid rgba(102, 255, 0, 0.2); margin-bottom: 10px; padding-bottom: 4px; color: rgba(102, 255, 0, 0.6); font-weight: bold; letter-spacing: 2px; width: 100%; text-align: right;}
+        .hud-stat { margin-bottom: 6px; letter-spacing: 1px;} .hud-stat span { color: rgba(255, 255, 255, 0.8); }
+        .clock-display { font-size: 3rem; color: #66ff00; text-shadow: 0 0 15px rgba(102, 255, 0, 0.6), 0 0 5px rgba(102, 255, 0, 0.4); letter-spacing: 4px; margin-top: 15px; }
+
+        /* --- VOLATILE FIELD NOTES --- */
+        .notes-select { width: 280px; background: rgba(0,0,0,0.4); border: 1px solid rgba(102, 255, 0, 0.3); color: rgba(102, 255, 0, 0.9); font-family: 'Share Tech Mono', monospace; font-size: 0.8rem; padding: 6px; outline: none; border-radius: 3px; cursor: pointer; margin-bottom: 6px; }
+        .notes-select option { background: #0d1a08; color: #66ff00; }
+        .notes-input { width: 280px; height: 110px; background: rgba(0, 0, 0, 0.4); border: 1px solid rgba(102, 255, 0, 0.3); color: rgba(102, 255, 0, 0.9); font-family: 'Share Tech Mono', monospace; font-size: 0.85rem; padding: 12px; border-radius: 3px; resize: none; outline: none; transition: 0.3s; box-shadow: inset 0 0 10px rgba(0,0,0,0.8); line-height: 1.4; margin-bottom: 6px;}
+        .notes-input:focus { border-color: #66ff00; box-shadow: 0 0 10px rgba(102, 255, 0, 0.3), inset 0 0 10px rgba(0,0,0,0.8); background: rgba(10, 15, 10, 0.6); }
+        .notes-input[readonly] { color: #555; border-color: #333; background: rgba(0,0,0,0.6); cursor: not-allowed; }
+        .notes-input::placeholder { color: rgba(102, 255, 0, 0.2); text-transform: uppercase; }
+        .notes-btn { width: 280px; background: rgba(102, 255, 0, 0.1); border: 1px solid rgba(102, 255, 0, 0.3); color: #66ff00; font-family: 'Share Tech Mono', monospace; padding: 8px; cursor: pointer; border-radius: 3px; font-size: 0.8rem; font-weight: bold; transition: 0.2s; text-transform: uppercase; }
+        .notes-btn:hover:not(:disabled) { background: rgba(102, 255, 0, 0.2); border-color: #66ff00; }
+        .notes-btn:disabled { color: #555; border-color: #333; background: transparent; cursor: not-allowed; }
+
+        /* --- MAIN UI --- */
+        .radio-body { width: 100%; max-width: 440px; background: rgba(30, 30, 35, 0.85); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 12px; padding: 25px; box-shadow: 0 30px 60px rgba(0,0,0,0.8), inset 0 1px 0 rgba(255,255,255,0.1); position: relative; z-index: 10; }
+        .lcd-screen { background: #0d1a08; border: 3px inset #111; border-radius: 6px; padding: 15px; margin-bottom: 25px; position: relative; box-shadow: inset 0 0 20px rgba(0,0,0,0.9); }
+        .lcd-text { font-family: 'Share Tech Mono', monospace; color: #66ff00; text-shadow: 0 0 8px rgba(102, 255, 0, 0.6); font-size: 1.1rem; display: flex; justify-content: space-between; align-items: center; }
+        .lcd-status { font-size: 0.85rem; opacity: 0.8; }
+        .lcd-visualizer { display: flex; gap: 3px; height: 15px; align-items: flex-end; margin-top: 10px; opacity: 0; transition: opacity 0.3s; }
+        .lcd-visualizer .bar { width: 4px; background: #66ff00; box-shadow: 0 0 5px #66ff00; }
+
+        .control-group { margin-bottom: 15px; }
+        label { display: block; font-size: 0.7rem; color: #888; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 6px; font-weight: 700; }
+        input[type="text"], select { width: 100%; background: rgba(0,0,0,0.4); border: 1px solid #3a3a42; color: #eaeaea; font-family: 'Share Tech Mono', monospace; font-size: 1.2rem; padding: 10px; border-radius: 4px; outline: none; transition: border-color 0.3s; }
+        input[type="text"]:focus, select:focus { border-color: #66ff00; }
+
+        /* --- SCRUB BAR --- */
+        .scrub-container { display: flex; align-items: center; gap: 15px; margin: 20px 0 10px 0; font-family: 'Share Tech Mono', monospace; font-size: 0.9rem; color: #aaa; }
+        input[type="range"] { flex: 1; -webkit-appearance: none; background: transparent; height: 4px; border-radius: 2px; background: rgba(255,255,255,0.15); outline: none; }
+        input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; height: 14px; width: 14px; border-radius: 50%; background: #fff; cursor: pointer; box-shadow: 0 0 8px rgba(255,255,255,0.6); }
+        
+        /* --- MEDIA DECK & INTERCOM --- */
+        .media-deck { display: flex; gap: 10px; margin-top: 15px; justify-content: center; align-items: center; background: rgba(0,0,0,0.3); padding: 10px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.05); }
+        .deck-btn { height: 45px; border: none; border-radius: 4px; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 0 rgba(0,0,0,0.4); transition: transform 0.1s, box-shadow 0.1s; }
+        .deck-btn:active { transform: translateY(4px); box-shadow: 0 0 0 rgba(0,0,0,0.4); }
+        .btn-tx { background: #c22929; color: white; border: 1px solid #ff4c4c; flex: 2; font-size: 1.5rem;}
+        .btn-halt { background: rgba(0,0,0,0.5); color: #888; border: 1px solid #444; flex: 1; font-size: 1rem;}
+        .btn-nav { background: rgba(255,255,255,0.05); color: #aaa; border: 1px solid #333; flex: 1; font-size: 1rem;}
+        
+        .btn-intercom { width: 100%; margin-top: 15px; padding: 12px 0; background: rgba(200, 150, 0, 0.1); border: 1px solid #c89600; color: #ffcc00; font-family: 'Share Tech Mono', monospace; font-size: 1.1rem; font-weight: bold; letter-spacing: 2px; cursor: pointer; border-radius: 4px; box-shadow: 0 4px 0 rgba(0,0,0,0.4); transition: 0.2s; }
+        .btn-intercom:hover { background: rgba(200, 150, 0, 0.2); box-shadow: 0 0 15px rgba(200, 150, 0, 0.2); }
+        .btn-intercom:active { transform: translateY(4px); box-shadow: 0 0 0 rgba(0,0,0,0.4); }
+        
+        /* --- UPLOAD ZONE --- */
+        .upload-zone { display: flex; gap: 10px; margin-bottom: 10px; background: rgba(0,0,0,0.4); border: 1px dashed #444; padding: 10px; border-radius: 4px; }
+        input[type="file"] { flex: 1; color: #888; font-size: 0.8rem; }
+        input[type="file"]::file-selector-button { background: #333; color: #eee; border: 1px solid #444; padding: 6px 12px; border-radius: 3px; cursor: pointer; font-family: 'Inter', sans-serif;}
+        .upload-btn { background: #333; border: 1px solid #444; color: white; padding: 0 15px; border-radius: 3px; cursor: pointer; font-size: 0.8rem; font-weight: 700;}
+
+        /* --- ACTIVE STATES --- */
+        .broadcasting .lcd-visualizer { opacity: 1; }
+        .broadcasting .lcd-text { color: #ff3333; text-shadow: 0 0 8px rgba(255, 51, 51, 0.6); }
+        .broadcasting .lcd-visualizer .bar { background: #ff3333; box-shadow: 0 0 5px #ff3333; animation: eq 0.4s infinite alternate ease-in-out; }
+        .broadcasting .lcd-visualizer .bar:nth-child(2) { animation-delay: 0.1s; } .broadcasting .lcd-visualizer .bar:nth-child(3) { animation-delay: 0.2s; }
+        .broadcasting .lcd-visualizer .bar:nth-child(4) { animation-delay: 0.1s; } .broadcasting .lcd-visualizer .bar:nth-child(5) { animation-delay: 0.3s; }
+        @keyframes eq { 0% { height: 3px; } 100% { height: 15px; } }
+
+        .live-mic-active .btn-intercom { background: rgba(255, 0, 0, 0.2); border-color: #ff3333; color: #ff3333; }
+        .live-mic-active .lcd-text { color: #ff3333; text-shadow: 0 0 10px rgba(255, 0, 0, 0.8); }
+        .live-mic-active .lcd-visualizer { opacity: 1; }
+        .live-mic-active .lcd-visualizer .bar { background: #ff3333; box-shadow: 0 0 8px #ff3333; animation: eq 0.2s infinite alternate ease-in-out; }
+    </style>
+</head>
+<body>
+    
+    <div class="hud top-left">
+        <div class="hud-title">SYS_TELEMETRY</div>
+        <div class="hud-stat">CPU_TEMP: <span id="hudTemp">--</span> °C</div>
+        <div class="hud-stat">SYS_LOAD: <span id="hudLoad">--</span></div>
+        <div class="hud-stat">MEM_USE : <span id="hudMem">--</span> %</div>
+    </div>
+    
+    <div class="hud top-right">
+        <div class="hud-title">NET_TRAFFIC</div>
+        <div class="hud-stat">RX_RATE: <span id="hudRx">--</span> KB/s</div>
+        <div class="hud-stat">TX_RATE: <span id="hudTx">--</span> KB/s</div>
+    </div>
+
+    <div class="hud bottom-left">
+        <div class="hud-title">LOCAL_TIME</div>
+        <div class="clock-display" id="sysClock">00:00:00</div>
+    </div>
+
+    <div class="hud bottom-right">
+        <div class="hud-title">FIELD_NOTES</div>
+        <select id="notesDropdown" class="notes-select">
+            <option value="new">>> NEW LOG ENTRY <<</option>
+        </select>
+        <textarea id="tacticalNotes" class="notes-input" spellcheck="false" placeholder="> Log operation notes here..."></textarea>
+        <button id="saveNoteBtn" class="notes-btn">COMMIT LOG</button>
+    </div>
+
+    <canvas id="sondavenCanvas"></canvas>
+    <div class="grain-overlay"></div>
+
+    <div class="radio-body" id="radioBody">
+        <div class="lcd-screen">
+            <div class="lcd-text">
+                <span id="lcdFreq">100.0 MHZ</span>
+                <span class="lcd-status" id="lcdStatus">IDLE [RX]</span>
+            </div>
+            <div class="lcd-visualizer">
+                <div class="bar"></div><div class="bar"></div><div class="bar"></div><div class="bar"></div><div class="bar"></div>
+            </div>
+        </div>
+
+        <form id="txForm">
+            <div class="control-group">
+                <label>VHF Frequency Dial</label>
+                <input type="text" name="freq" id="freqInput" value="100.0" required autocomplete="off">
+            </div>
+            
+            <div class="control-group">
+                <label>Audio Payload Selection</label>
+                <select name="audio_file" id="audioSelect" required>
+                    <option value="">Loading files...</option>
+                </select>
+            </div>
+
+            <div class="scrub-container">
+                <span id="timeCurrent">0:00</span>
+                <input type="range" id="seekSlider" name="offset" value="0" min="0" max="100" step="1">
+                <span id="timeTotal">0:00</span>
+            </div>
+
+            <div class="media-deck">
+                <button type="button" class="deck-btn btn-halt" id="stopBtn" title="Kill Signal">&#9632;</button>
+                <button type="button" class="deck-btn btn-nav" id="prevBtn" title="Previous Payload">&#9664;&#9664;</button>
+                <button type="submit" class="deck-btn btn-tx" id="startBtn" title="Transmit">&#9654;</button>
+                <button type="button" class="deck-btn btn-nav" id="nextBtn" title="Next Payload">&#9654;&#9654;</button>
+            </div>
+
+            <!-- LIVE MIC TOGGLE -->
+            <button type="button" class="btn-intercom" id="micBtn">
+                <span class="mic-icon">&#127897;</span> ENGAGE LIVE INTERCOM
+            </button>
+        </form>
+
+        <hr style="border: 0; border-top: 1px dashed rgba(255,255,255,0.1); margin: 20px 0 15px 0;">
+        <label>Inject Remote Audio (.WAV)</label>
+        <form id="uploadForm" class="upload-zone">
+            <input type="file" id="fileInput" accept=".wav" required>
+            <button type="submit" class="upload-btn">PUSH</button>
+        </form>
+    </div>
+
+    <!-- SCRIPT 1: Clock & Volatile Notes Engine -->
+    <script>
+        function updateClock() {
+            const now = new Date();
+            const h = String(now.getHours()).padStart(2, '0');
+            const m = String(now.getMinutes()).padStart(2, '0');
+            const s = String(now.getSeconds()).padStart(2, '0');
+            document.getElementById('sysClock').innerText = `${h}:${m}:${s}`;
+        }
+        setInterval(updateClock, 1000); updateClock();
+
+        const notesDropdown = document.getElementById('notesDropdown');
+        const notesInput = document.getElementById('tacticalNotes');
+        const saveNoteBtn = document.getElementById('saveNoteBtn');
+        
+        let sessionNotes = []; 
+        let activeNoteId = 'new';
+
+        function getNoteTime() {
+            const now = new Date();
+            return String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0') + ':' + String(now.getSeconds()).padStart(2, '0');
+        }
+
+        function renderNotesDropdown() {
+            notesDropdown.innerHTML = '<option value="new">>> NEW LOG ENTRY <<</option>';
+            sessionNotes.forEach(note => {
+                notesDropdown.add(new Option(`[${note.time}] SYS_LOG`, note.id));
+            });
+            notesDropdown.value = activeNoteId;
+        }
+
+        function evaluateNoteState() {
+            if (activeNoteId === 'new') {
+                notesInput.value = '';
+                notesInput.readOnly = false;
+                saveNoteBtn.innerText = 'COMMIT LOG';
+                saveNoteBtn.disabled = false;
+            } else {
+                const note = sessionNotes.find(n => n.id === activeNoteId);
+                notesInput.value = note.text;
+                
+                if (note.locked || Date.now() >= note.expiresAt) {
+                    note.locked = true;
+                    notesInput.readOnly = true;
+                    saveNoteBtn.innerText = 'LOCKED';
+                    saveNoteBtn.disabled = true;
+                } else {
+                    notesInput.readOnly = false;
+                    saveNoteBtn.disabled = true; 
+                }
+            }
+        }
+
+        saveNoteBtn.addEventListener('click', () => {
+            if (activeNoteId === 'new' && notesInput.value.trim() !== '') {
+                const newId = Date.now().toString();
+                sessionNotes.push({
+                    id: newId, time: getNoteTime(), text: notesInput.value,
+                    expiresAt: Date.now() + 30000, locked: false
+                });
+                activeNoteId = newId;
+                renderNotesDropdown();
+                evaluateNoteState();
+            }
+        });
+
+        notesInput.addEventListener('input', (e) => {
+            if (activeNoteId !== 'new') {
+                const note = sessionNotes.find(n => n.id === activeNoteId);
+                if (note && !note.locked) note.text = e.target.value;
+            }
+        });
+
+        notesDropdown.addEventListener('change', (e) => {
+            activeNoteId = e.target.value;
+            evaluateNoteState();
+        });
+
+        setInterval(() => {
+            if (activeNoteId !== 'new') {
+                const note = sessionNotes.find(n => n.id === activeNoteId);
+                if (note && !note.locked) {
+                    const timeLeft = Math.ceil((note.expiresAt - Date.now()) / 1000);
+                    if (timeLeft <= 0) {
+                        note.locked = true;
+                        evaluateNoteState();
+                    } else {
+                        saveNoteBtn.innerText = `EDITABLE (${timeLeft}s)`;
+                    }
+                }
+            }
+        }, 1000);
+    </script>
+
+    <!-- SCRIPT 2: Telemetry Engine -->
+    <script>
+        let lastRx = 0, lastTx = 0, firstPoll = true;
+        setInterval(async () => {
+            try {
+                const res = await fetch('/stats'); const data = await res.json();
+                document.getElementById('hudTemp').innerText = data.temp.toFixed(1);
+                document.getElementById('hudLoad').innerText = data.load.toFixed(2);
+                document.getElementById('hudMem').innerText = data.mem.toFixed(1);
+                if (!firstPoll) {
+                    document.getElementById('hudRx').innerText = ((data.rx - lastRx) / 1024).toFixed(1);
+                    document.getElementById('hudTx').innerText = ((data.tx - lastTx) / 1024).toFixed(1);
+                }
+                lastRx = data.rx; lastTx = data.tx; firstPoll = false;
+            } catch(e) {}
+        }, 1000); 
+    </script>
+
+    <!-- SCRIPT 3: Playback, Upload & Intercom Logic -->
+    <script>
+        const txForm = document.getElementById('txForm');
+        const audioSelect = document.getElementById('audioSelect');
+        const seekSlider = document.getElementById('seekSlider');
+        const timeCurrent = document.getElementById('timeCurrent');
+        const timeTotal = document.getElementById('timeTotal');
+        const lcdFreq = document.getElementById('lcdFreq');
+        const radioBody = document.getElementById('radioBody');
+        const lcdStatus = document.getElementById('lcdStatus');
+        const micBtn = document.getElementById('micBtn');
+        
+        let playInterval;
+        let isBroadcasting = false;
+
+        document.getElementById('freqInput').addEventListener('input', (e) => {
+            lcdFreq.innerText = (e.target.value || "0.0") + " MHZ";
+        });
+
+        function formatTime(seconds) {
+            const m = Math.floor(seconds / 60);
+            const s = Math.floor(seconds % 60).toString().padStart(2, '0');
+            return `${m}:${s}`;
+        }
+
+        async function loadTrackData() {
+            if (!audioSelect.value) return;
+            const formData = new FormData();
+            formData.append('audio_file', audioSelect.value);
+            const res = await fetch('/file_info', { method: 'POST', body: formData });
+            const data = await res.json();
+            
+            seekSlider.max = data.duration;
+            seekSlider.value = 0;
+            timeTotal.innerText = formatTime(data.duration);
+            timeCurrent.innerText = "0:00";
+        }
+
+        async function refreshFiles() {
+            const res = await fetch('/files');
+            const files = await res.json();
+            audioSelect.innerHTML = ''; 
+            if (files.length === 0) { audioSelect.innerHTML = '<option value="">No .wav files</option>'; return; }
+            files.forEach(file => { audioSelect.add(new Option(file, file)); });
+            loadTrackData();
+        }
+
+        audioSelect.addEventListener('change', () => { haltBroadcast(); loadTrackData(); });
+        
+        seekSlider.addEventListener('change', () => { 
+            timeCurrent.innerText = formatTime(seekSlider.value); 
+            if(isBroadcasting && !radioBody.classList.contains('live-mic-active')) triggerBroadcast(); 
+        });
+        
+        seekSlider.addEventListener('input', () => { 
+            timeCurrent.innerText = formatTime(seekSlider.value); 
+        });
+
+        function triggerBroadcast() {
+            radioBody.classList.remove('live-mic-active');
+            radioBody.classList.add('broadcasting');
+            lcdStatus.innerText = 'TX ACTIVE';
+            isBroadcasting = true;
+            
+            fetch('/broadcast', { method: 'POST', body: new FormData(txForm) });
+
+            clearInterval(playInterval);
+            playInterval = setInterval(() => {
+                let current = parseFloat(seekSlider.value);
+                let max = parseFloat(seekSlider.max);
+                if (current < max) {
+                    current++; seekSlider.value = current; timeCurrent.innerText = formatTime(current);
+                } else { haltBroadcast(); }
+            }, 1000);
+        }
+
+        function haltBroadcast() {
+            radioBody.classList.remove('broadcasting');
+            radioBody.classList.remove('live-mic-active');
+            lcdStatus.innerText = 'IDLE [RX]';
+            isBroadcasting = false;
+            clearInterval(playInterval);
+            fetch('/stop', { method: 'POST' });
+        }
+
+        txForm.addEventListener('submit', (e) => { e.preventDefault(); triggerBroadcast(); });
+        document.getElementById('stopBtn').addEventListener('click', haltBroadcast);
+        
+        document.getElementById('nextBtn').addEventListener('click', () => {
+            if (audioSelect.options.length <= 1) return;
+            audioSelect.selectedIndex = (audioSelect.selectedIndex + 1) % audioSelect.options.length;
+            loadTrackData().then(triggerBroadcast);
+        });
+
+        document.getElementById('prevBtn').addEventListener('click', () => {
+            if (audioSelect.options.length <= 1) return;
+            audioSelect.selectedIndex = (audioSelect.selectedIndex - 1 + audioSelect.options.length) % audioSelect.options.length;
+            loadTrackData().then(triggerBroadcast);
+        });
+
+        // Live USB Mic Intercom Handler
+        micBtn.addEventListener('click', () => {
+            clearInterval(playInterval);
+            
+            radioBody.classList.remove('broadcasting');
+            radioBody.classList.add('live-mic-active');
+            lcdStatus.innerText = 'LIVE MIC_TX';
+            isBroadcasting = true;
+
+            fetch('/mic', { method: 'POST', body: new FormData(txForm) })
+                .catch(err => console.error(err));
+        });
+
+        document.getElementById('uploadForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = new FormData();
+            formData.append('file', document.getElementById('fileInput').files[0]);
+            const res = await fetch('/upload', { method: 'POST', body: formData });
+            if (res.ok) { document.getElementById('fileInput').value = ''; refreshFiles(); }
+        });
+
+        window.onload = refreshFiles;
+    </script>
+
+    <!-- SCRIPT 4: Canvas Wave Engine -->
+    <script>
+        const canvas = document.getElementById('sondavenCanvas');
+        const ctx = canvas.getContext('2d');
+        let width, height, time = 0, mouseX = -1000, mouseY = -1000;
+        function resizeCanvas() { width = canvas.width = window.innerWidth; height = canvas.height = window.innerHeight; }
+        window.addEventListener('resize', resizeCanvas); resizeCanvas();
+        window.addEventListener('mousemove', (e) => { mouseX = e.clientX; mouseY = e.clientY; });
+
+        function drawWave() {
+            ctx.fillStyle = 'rgba(8, 8, 10, 0.4)'; ctx.fillRect(0, 0, width, height);
+            const spacing = 32; 
+            for (let x = spacing / 2; x < width; x += spacing) {
+                for (let y = spacing / 2; y < height; y += spacing) {
+                    let dx = mouseX - x, dy = mouseY - y, dist = Math.sqrt(dx * dx + dy * dy);
+                    let wave = Math.sin(x * 0.003 + time) * Math.cos(y * 0.003 + time);
+                    let hover = dist < 280 ? (280 - dist) / 280 : 0;
+                    let h = (Math.abs(wave) * 10) + (hover * 25) + 2;
+                    ctx.fillStyle = hover > 0.05 ? `rgba(102, 255, 0, ${0.1 + hover * 0.5})` : `rgba(255, 255, 255, ${0.02 + Math.abs(wave) * 0.03})`; 
+                    ctx.fillRect(x - 1, y - h / 2, 2, h);
+                }
+            }
+            time += 0.02; requestAnimationFrame(drawWave);
+        }
+        drawWave();
+    </script>
+</body>
+</html>

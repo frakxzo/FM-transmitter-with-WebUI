@@ -1,0 +1,16 @@
+# Python caches
+__pycache__/
+*.pyc
+
+# Virtual Environments
+venv/
+env/
+
+# Audio Payload Directory
+audio_files/
+*.wav
+*.mp3
+
+# Ignore compiled C binaries
+pi_fm_rds
+*.o
