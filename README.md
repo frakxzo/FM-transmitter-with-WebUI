@@ -1,10 +1,3 @@
-Here is a much cleaner, aesthetic, and easy-to-read version of your `README.md`.
-
-I have reformatted it using markdown headers, blockquotes, and visual dividers to make it pop. I also added a highly visible **CRITICAL STEP** warning to ensure anyone deploying this knows the files must sit explicitly in the `src` folder to prevent pathing errors. I also made sure to include the trailing dot (`.`) in the clone command so it pulls the files directly into that folder without creating a nested directory.
-
-You can copy and paste this directly into your GitHub repository:
-
-
 # 📻 FM-Transmitter with WebUI
 
 > A lightweight, headless ad-hoc RF broadcast and remote command interface built for the Raspberry Pi 3B. It utilizes bare-metal Direct Memory Access (DMA) clock manipulation to transmit FM radio signals, featuring a volatile memory field-notes system, real-time hardware telemetry, and live USB intercom capabilities.
