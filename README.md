@@ -1,42 +1,76 @@
-# FM-transmitter with WebUI
+Here is a much cleaner, aesthetic, and easy-to-read version of your `README.md`.
 
-A lightweight, headless ad-hoc RF broadcast and remote command interface built for the Raspberry Pi 3B. It utilizes bare-metal Direct Memory Access (DMA) clock manipulation to transmit FM radio signals, featuring a volatile memory field-notes system, real-time hardware telemetry, and live USB intercom capabilities.
-* Special thanks to [Christophe Jacquet](https://github.com/ChristopheJacquet) for Building this amazing project.
+I have reformatted it using markdown headers, blockquotes, and visual dividers to make it pop. I also added a highly visible **CRITICAL STEP** warning to ensure anyone deploying this knows the files must sit explicitly in the `src` folder to prevent pathing errors. I also made sure to include the trailing dot (`.`) in the clone command so it pulls the files directly into that folder without creating a nested directory.
 
-## Hardware Requirements
-* Raspberry Pi 3B (or compatible SBC)
-* 20cm jumper wire attached to GPIO 4 (Pin 7) acting as the antenna
-* USB Microphone (for Live Intercom mode)
+You can copy and paste this directly into your GitHub repository:
 
-## Fresh Install & Setup
+```markdown
+# 📻 FM-Transmitter with WebUI
 
-**1. Install System Dependencies**
-Ensure the OS has the required audio slicing and encoding tools:
+> A lightweight, headless ad-hoc RF broadcast and remote command interface built for the Raspberry Pi 3B. It utilizes bare-metal Direct Memory Access (DMA) clock manipulation to transmit FM radio signals, featuring a volatile memory field-notes system, real-time hardware telemetry, and live USB intercom capabilities.
+> 
+> *Special thanks to **Christophe Jacquet** for building the core transmission engine.*
 
-sudo apt update
+---
+
+## ⚙️ Hardware Requirements
+
+* **Raspberry Pi 3B** (or compatible SBC)
+* **20cm jumper wire** attached to **GPIO 4 (Pin 7)** acting as the antenna
+* **USB Microphone** (Required for Live Intercom mode)
+
+---
+
+## 🚀 Fresh Install & Setup
+
+### 1. Install System Dependencies
+Ensure the OS has the required audio slicing and encoding tools installed:
+```bash
+sudo apt update 
 sudo apt install python3-flask sox ffmpeg alsa-utils git -y
 
-**2. Install the Hardware Driver**
+```
+
+### 2. Install the Hardware Driver
 
 Clone and compile the core FM transmitter dependency:
 
-git clone [https://github.com/ChristopheJacquet/PiFmRds.git](https://github.com/ChristopheJacquet/PiFmRds.git)
-cd PiFmRds/src
+```bash
+git clone [https://github.com/ChristopheJacquet/PiFmRds.git](https://github.com/ChristopheJacquet/PiFmRds.git) 
+cd PiFmRds/src 
 make
 
-**3. Clone the WebUI**
-Clone this repository directly into the src folder alongside the compiled PiFmRds binary:
+```
 
+### 3. Clone the WebUI (⚠️ CRITICAL PATH REQUIREMENT)
 
-git clone https://github.com/frakxzo/FM-transmitter-with-WebUI.git
+**IMPORTANT:** All Python and HTML files from this repository **MUST** be placed directly inside the `src` folder alongside the compiled `pi_fm_rds` binary. If the pathing is altered, the backend will fail to execute the hardware commands.
 
+Ensure you are still inside the `PiFmRds/src` directory, then clone this repository into it using the trailing dot (`.`):
 
-**4. Execute the Node**
+```bash
+git clone [https://github.com/frakxzo/FM-transmitter-with-WebUI.git](https://github.com/frakxzo/FM-transmitter-with-WebUI.git) .
+
+```
+
+### 4. Execute the Node
+
 The dashboard requires root privileges to bind to the GPIO pins and access system thermal files:
 
-Bash
-sudo python3 app.py
-Access the tactical UI via http://<PI_IP_ADDRESS>:6767 on your local network.
+```bash
+sudo python3 app.py 
 
-**Acknowledgments & Credits**
-FM Transmission Core: The underlying RF modulation driver used in this project is PiFmRds, developed by Christophe Jacquet. It handles the bare-metal DMA clock manipulation required to generate the FM carrier wave.
+```
+
+Once running, access the tactical UI on your local network via:
+**`http://<PI_IP_ADDRESS>:6767`**
+
+---
+
+## 🏆 Acknowledgments & Credits
+
+* **FM Transmission Core:** The underlying RF modulation driver used in this project is **[PiFmRds](https://github.com/ChristopheJacquet/PiFmRds)**, developed by **Christophe Jacquet**. It handles the bare-metal DMA clock manipulation required to generate the FM carrier wave.
+
+```
+
+```
