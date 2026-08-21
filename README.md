@@ -4,7 +4,7 @@ I have reformatted it using markdown headers, blockquotes, and visual dividers t
 
 You can copy and paste this directly into your GitHub repository:
 
-```markdown
+
 # 📻 FM-Transmitter with WebUI
 
 > A lightweight, headless ad-hoc RF broadcast and remote command interface built for the Raspberry Pi 3B. It utilizes bare-metal Direct Memory Access (DMA) clock manipulation to transmit FM radio signals, featuring a volatile memory field-notes system, real-time hardware telemetry, and live USB intercom capabilities.
@@ -25,22 +25,21 @@ You can copy and paste this directly into your GitHub repository:
 
 ### 1. Install System Dependencies
 Ensure the OS has the required audio slicing and encoding tools installed:
-```bash
+
 sudo apt update 
 sudo apt install python3-flask sox ffmpeg alsa-utils git -y
 
-```
 
 ### 2. Install the Hardware Driver
 
 Clone and compile the core FM transmitter dependency:
 
-```bash
+
 git clone [https://github.com/ChristopheJacquet/PiFmRds.git](https://github.com/ChristopheJacquet/PiFmRds.git) 
 cd PiFmRds/src 
 make
 
-```
+
 
 ### 3. Clone the WebUI (⚠️ CRITICAL PATH REQUIREMENT)
 
@@ -48,24 +47,23 @@ make
 
 Ensure you are still inside the `PiFmRds/src` directory, then clone this repository into it using the trailing dot (`.`):
 
-```bash
 git clone [https://github.com/frakxzo/FM-transmitter-with-WebUI.git](https://github.com/frakxzo/FM-transmitter-with-WebUI.git) .
 
-```
+
 
 ### 4. Execute the Node
 
 The dashboard requires root privileges to bind to the GPIO pins and access system thermal files:
 
-```bash
+
 sudo python3 app.py 
 
-```
+
 
 Once running, access the tactical UI on your local network via:
 **`http://<PI_IP_ADDRESS>:6767`**
 
----
+
 
 ## 🏆 Acknowledgments & Credits
 
