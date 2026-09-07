@@ -32,7 +32,9 @@ git clone https://github.com/ChristopheJacquet/PiFmRds.git
 sudo apt-get install libsndfile1-dev
 cd PiFmRds/src 
 make
+mkdir audio_files
 ```
+Save all your .wav files in this directory(audio_files)
 
 
 ### 3. Clone the WebUI (⚠️ CRITICAL PATH REQUIREMENT)
