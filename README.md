@@ -28,7 +28,7 @@ sudo apt install python3-flask sox ffmpeg alsa-utils git -y
 Clone and compile the core FM transmitter dependency:
 
 ```bash
-git clone [https://github.com/ChristopheJacquet/PiFmRds.git](https://github.com/ChristopheJacquet/PiFmRds.git) 
+git clone https://github.com/ChristopheJacquet/PiFmRds.git 
 cd PiFmRds/src 
 make
 ```
@@ -40,7 +40,7 @@ make
 
 Ensure you are still inside the `PiFmRds/src` directory, then clone this repository into it using the trailing dot (`.`):
 ```bash
-git clone [https://github.com/frakxzo/FM-transmitter-with-WebUI.git](https://github.com/frakxzo/FM-transmitter-with-WebUI.git) .
+git clone https://github.com/frakxzo/FM-transmitter-with-WebUI.git
 ```
 
 
