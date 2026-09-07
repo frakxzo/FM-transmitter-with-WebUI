@@ -28,7 +28,8 @@ sudo apt install python3-flask sox ffmpeg alsa-utils git -y
 Clone and compile the core FM transmitter dependency:
 
 ```bash
-git clone https://github.com/ChristopheJacquet/PiFmRds.git 
+git clone https://github.com/ChristopheJacquet/PiFmRds.git
+sudo apt-get install libsndfile1-dev
 cd PiFmRds/src 
 make
 ```
